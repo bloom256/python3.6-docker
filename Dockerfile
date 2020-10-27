@@ -7,10 +7,12 @@ ENV LC_ALL=C.UTF-8
 # Dependencies for glvnd and X11.
 RUN apt-get update \
   && apt-get install -y -qq \
+    cmake \
     git-gui \
     gitk \
     htop \
     libegl1 \
+    libgdal-dev \
     libgl1 \
     libglvnd0 \
     libglx0 \
@@ -23,6 +25,12 @@ RUN apt-get update \
     python3-pip \
     sudo \
   && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/PDAL/PDAL.git /PDAL \
+&& cd /PDAL \
+&& git checkout 2.1.0 \
+&& mkdir build && cd build \
+&& cmake .. && make -j12 && make install
 
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
