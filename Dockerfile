@@ -26,21 +26,33 @@ RUN apt-get update \
     sudo \
   && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/PDAL/PDAL.git /PDAL \
+RUN git clone --branch 3.4.3 https://github.com/LASzip/LASzip.git /LASzip \
+    && cd /LASzip && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD-TYPE=Release .. && make -j12 && make install && make clean
+
+RUN git clone --branch 2.1.0 https://github.com/PDAL/PDAL.git /PDAL \
 && cd /PDAL \
-&& git checkout 2.1.0 \
 && mkdir build && cd build \
-&& cmake .. && make -j12 && make install
+&& cmake .. && make -j12 && make install && make clean
 
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
 
+RUN echo "docker     ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/docker_user_no_passwd
 RUN useradd -m -s /bin/bash -G sudo -p `openssl passwd -1 docker` docker
 USER docker
 
 RUN export PATH="$PATH:/home/docker/.local/bin"
 RUN echo 'export PATH="$PATH:/home/docker/.local/bin"' >> /home/docker/.bashrc
+
+RUN echo "source /opt/ros/melodic/setup.bash" >> /home/docker/.bashrc
+RUN echo 'HISTCONTROL=ignoredups:erasedups' >> /home/docker/.bashrc
+RUN echo 'shopt -s histappend' >> /home/docker/.bashrc
+RUN echo 'PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"' >> /home/docker/.bashrc
+RUN echo 'HISTSIZE=100000' >> /home/docker/.bashrc
+RUN echo 'HISTFILESIZE=100000' >> /home/docker/.bashrc
+RUN echo 'HISTTIMEFORMAT="%d/%m/%y %T "' >> /home/docker/.bashrc
 
 RUN pip3 install jupyter
 EXPOSE 8888
